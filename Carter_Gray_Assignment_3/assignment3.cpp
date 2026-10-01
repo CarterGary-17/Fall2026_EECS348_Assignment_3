@@ -227,25 +227,23 @@ public: // commands the program uses
 
 // ---------------------------------------------------------------------------
 int main(int argc, char* argv[]) { // program entry point
-    string filename; // name of the test file to read
+    ifstream fileIn; // file stream, only opened if a filename is given
+    istream* in = &cin; // pointer to the input source, defaults to standard input
+
     if (argc > 1) { // a filename was passed on the command line
-        filename = argv[1]; // use it
-    } else { // nothing given
-        cout << "Enter test file name: "; // for the filename
-        getline(cin, filename); // read the whole line typed by the user
-    } // kill  selection
+        fileIn.open(argv[1]); // open that file for reading
+        if (!fileIn) { // opening failed
+            cerr << "Error: could not open file '" << argv[1] << "'" << endl; // report the problem on the error stream
+            return 1; // exit with a non-zero status
+        } // end of open check
+        in = &fileIn; // switch the input source from cin to the file
+    } // end of filename check
 
-    ifstream in(filename.c_str()); // open the test file for reading
-    if (!in) { // did not open
-        cerr << "Error: could not open file '" << filename << "'" << endl; // show that there is an issue
-        return 1; // exit with a non-zero status
-    } // kill check
-
-    CEOInbox inbox; // create the object
-    string line; // read only one line of the file at a time
-    while (getline(in, line)) { // while keep the file line by line until the end
+    CEOInbox inbox; // create the CEO's inbox object
+    string line; // holds one line of input at a time
+    while (getline(*in, line)) { // read from whichever source is selected until the end
         inbox.processLine(line); // run the command on that line
-    } // kill read loop
+    } // end of read loop
 
     return 0; // success
-} // kill program
+} // end of main
