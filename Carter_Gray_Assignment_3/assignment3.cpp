@@ -55,7 +55,11 @@ private: // data hidden from outside code
     } // end 
 
     int keyFor(const string& d) const { // converts MM-DD-YYYY into the integer YYYYMMDD
-        if (d.size() < 10) return 0; // too short to be a valid date, treat as oldest
+        if (d.size() != 10 || d[2] != '-' || d[5] != '-') return 0; // too short to be a valid date, treat as oldest
+        for (int i = 0; i < 10; i++) {
+        if (i == 2 || i == 5) continue;
+        if (!isdigit(static_cast<unsigned char>(d[i]))) return 0;
+        }
         int mm = stoi(d.substr(0, 2)); // characters 0-1 are the month
         int dd = stoi(d.substr(3, 2)); // characters 3-4 are the day (index 2 is '-')
         int yyyy = stoi(d.substr(6, 4)); // characters 6-9 are the year (index 5 is '-')
@@ -102,14 +106,17 @@ private: // internal heap machinery
         data[b] = tmp; // put the saved email in the second slot
     } // end of swapAt
 
-    void grow() { // doubles the array size when it is full
-        int newCap = capacity * 2; // new capacity is twice the old one
-        Email* bigger = new Email[newCap]; // allocate the larger array
-        for (int i = 0; i < count; i++) bigger[i] = data[i]; // copy every existing email over
-        delete[] data; // free the old array to avoid a memory leak
-        data = bigger; // point to the new array
-        capacity = newCap; // remember the new capacity
-    } // end of grow
+    void resize(int newCap) { // changes how many Email slots are allocated, used to grow or shrink the array
+    Email* resized = new Email[newCap]; // allocate a new array to the newCap slots
+    for (int i = 0; i < count; i++) resized[i] = move(data[i]); // move each stored email into the new array
+    delete[] data; // free the old array to avoid memory leak
+    data = resized; // point the heap at the new array
+    capacity = newCap; // remember the new number of slots
+} // end of resize
+
+    void grow() { //add to the new roles when it is full
+    resize(capacity * 2);
+}
 
     void siftUp(int i) { // moves a newly inserted email up to its correct spot
         while (i > 0 && data[i].hasHigherPriorityThan(data[parent(i)])) { // keep going while higher priority than parent
@@ -155,7 +162,11 @@ public: // operations the rest of the program uses
         data[0] = data[count - 1]; // move the last email into the root
         count--; // shrink the heap by one
         if (count > 0) siftDown(0); // push the moved email down to its correct place
+        if (capacity > 16 && count <= capacity / 4) resize(capacity / 2);
     } // end of removeMax
+
+
+
 }; // end of MaxHeap class
 
 // ---------------------------------------------------------------------------
